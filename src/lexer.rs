@@ -20,7 +20,13 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
 fn to_token(c: char) -> Result<Token, Error> {
     match c {
         letter if letter.is_alphabetic() => Ok(Token::Letter(c)),
-        number if number.is_numeric() => Ok(Token::Number(c as u8)),
+        number if number.is_digit(10) => match number.to_digit(10) {
+            Some(digit) => Ok(Token::Number(digit)),
+            None => Err(Error::LexerError(format!(
+                "failed to convert {} to digit",
+                c
+            ))),
+        },
         ' ' => Ok(Token::Space),
         '-' => Ok(Token::Dash),
         ':' => Ok(Token::Colon),
@@ -56,7 +62,7 @@ mod tests {
             tokens,
             vec![
                 Token::Letter('a'),
-                Token::Number(49),
+                Token::Number(1),
                 Token::Space,
                 Token::Dash,
                 Token::Colon,

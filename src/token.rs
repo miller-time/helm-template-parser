@@ -2,7 +2,7 @@
 pub enum Token {
     Space,
     Letter(char),
-    Number(u8),
+    Number(u32),
     Dash,
     Colon,
     Slash,
