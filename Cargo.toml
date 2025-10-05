@@ -1,6 +1,11 @@
 [package]
 name = "helm-template-parser"
-version = "0.1.0"
+description = "Parser for Helm template files"
+version = "0.0.1"
 edition = "2024"
+repository = "https://github.com/miller-time/helm-template-parser"
+documentation = "https://docs.rs/helm-template-parser"
+readme = "README.md"
+authors = ["Russell Cousineau <miller.time.baby@gmail.com>"]
 
 [dependencies]
