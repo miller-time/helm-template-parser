@@ -1,5 +1,8 @@
 # helm-template-parser
 
+![crates.io](https://img.shields.io/crates/v/helm-template-parser)
+![docs.rs](https://img.shields.io/docsrs/helm-template-parser)
+
 A parser for reading the YAML files within your Helm [templates][1] directory
 (that contain Helm [template expressions][2]).
 
