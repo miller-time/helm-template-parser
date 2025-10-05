@@ -18,11 +18,19 @@ impl TokenStream {
         self.tokens.clone().into()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.tokens.is_empty()
+    }
+
     pub fn peek(&self) -> Option<Token> {
         self.tokens.get(0).copied()
     }
 
     pub fn next(&mut self) -> Option<Token> {
         self.tokens.pop_front()
+    }
+
+    pub fn skip(&mut self) {
+        let _ = self.tokens.pop_front();
     }
 }
