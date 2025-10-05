@@ -29,7 +29,13 @@ pub fn parse_expression(input: &mut TokenStream) -> Result<String, Error> {
                     // check for second '}'
                     if let Some(token) = input.peek() {
                         if let Token::RightBrace = token {
+                            // and skip over it
                             input.skip();
+                            // check for following '\n'
+                            if let Some(Token::Newline) = input.peek() {
+                                // and skip over it
+                                input.skip();
+                            }
                             return Ok(expression);
                         } else {
                             let message = format!("expected '}}}}' but got '}}{}'", token);
