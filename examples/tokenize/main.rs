@@ -12,9 +12,9 @@ fn main() {
             continue;
         }
         let contents = fs::read_to_string(entry.path())
-            .expect(&format!("failed to open sample {}", file_name));
-        let tokens =
-            tokenize(&contents).expect(&format!("failed to tokenize sample {}", file_name));
+            .unwrap_or_else(|_| panic!("failed to open sample {}", file_name));
+        let tokens = tokenize(&contents)
+            .unwrap_or_else(|_| panic!("failed to tokenize sample {}", file_name));
         dbg!(file_name, tokens.len());
     }
 }

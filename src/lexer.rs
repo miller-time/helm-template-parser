@@ -3,15 +3,9 @@ use crate::{error::Error, token::Token};
 pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
     let mut tokens = Vec::new();
 
-    let mut iter = input.chars();
-    loop {
-        match iter.next() {
-            Some(c) => {
-                let token = to_token(c)?;
-                tokens.push(token);
-            }
-            None => break,
-        }
+    for c in input.chars() {
+        let token = to_token(c)?;
+        tokens.push(token);
     }
 
     Ok(tokens)
@@ -20,7 +14,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
 fn to_token(c: char) -> Result<Token, Error> {
     match c {
         letter if letter.is_alphabetic() => Ok(Token::Letter(c)),
-        number if number.is_digit(10) => match number.to_digit(10) {
+        number if number.is_ascii_digit() => match number.to_digit(10) {
             Some(digit) => Ok(Token::Number(digit)),
             None => Err(Error::LexerError(format!(
                 "failed to convert {} to digit",
