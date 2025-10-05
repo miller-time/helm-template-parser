@@ -1,6 +1,6 @@
-use crate::{error::Error, token::Token};
+use crate::{error::Error, stream::TokenStream, token::Token};
 
-pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
+pub fn tokenize(input: &str) -> Result<TokenStream, Error> {
     let mut tokens = Vec::new();
 
     for c in input.chars() {
@@ -8,7 +8,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
         tokens.push(token);
     }
 
-    Ok(tokens)
+    Ok(TokenStream::new(tokens))
 }
 
 fn to_token(c: char) -> Result<Token, Error> {
@@ -51,9 +51,9 @@ mod tests {
 
     #[test]
     fn to_token() {
-        let tokens = tokenize("a1 -:/|.,'\"*=%\n()[]{}$").expect("failed to tokenize");
+        let stream = tokenize("a1 -:/|.,'\"*=%\n()[]{}$").expect("failed to tokenize");
         assert_eq!(
-            tokens,
+            stream.tokens(),
             vec![
                 Token::Letter('a'),
                 Token::Number(1),

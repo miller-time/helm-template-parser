@@ -13,8 +13,8 @@ fn main() {
         }
         let contents = fs::read_to_string(entry.path())
             .unwrap_or_else(|_| panic!("failed to open sample {}", file_name));
-        let tokens = tokenize(&contents)
+        let stream = tokenize(&contents)
             .unwrap_or_else(|_| panic!("failed to tokenize sample {}", file_name));
-        dbg!(file_name, tokens.len());
+        dbg!(file_name, stream.tokens().len());
     }
 }
