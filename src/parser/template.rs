@@ -1,41 +1,40 @@
 use crate::{
-    error::Error, parser::expression::parse_expression, stream::TokenStream, token::Token,
+    error::Error,
+    parser::{entry::Entry, expression::parse_expression, map::Map},
+    stream::TokenStream,
 };
 
-#[derive(Debug, PartialEq)]
-pub enum TemplateEntry {
-    Expression(String),
-    Map,
-}
-
-#[derive(Debug, Default, PartialEq)]
-pub struct Template {
-    pub entries: Vec<TemplateEntry>,
-}
-
-pub fn parse_template(mut input: TokenStream) -> Result<Template, Error> {
+pub fn parse_template(mut input: TokenStream) -> Result<Vec<Map>, Error> {
     if input.is_empty() {
-        return Ok(Template::default());
+        return Ok(Vec::new());
     }
+    let mut maps = Vec::new();
     let mut entries = Vec::new();
     loop {
-        match input.peek() {
-            Some(token) => match token {
-                Token::LeftBrace => {
-                    let expression = parse_expression(&mut input)?;
-                    entries.push(TemplateEntry::Expression(expression));
-                }
-                _ => {}
-            },
-            None => break,
+        if input.is_empty() {
+            break;
+        }
+        let lines = input.peek_lines(2);
+        if is_expression(&lines) {
+            let expression = parse_expression(&mut input)?;
+            entries.push(Entry::Expression(expression));
         }
     }
-    Ok(Template { entries })
+    maps.push(Map {
+        indentation: 0,
+        items: entries,
+    });
+    Ok(maps)
+}
+
+fn is_expression(lines: &Vec<String>) -> bool {
+    let first = lines[0].trim();
+    return first.starts_with("{{") && first.ends_with("}}");
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::tokenize;
+    use crate::{lexer::tokenize, parser::expression::Expression};
 
     use super::*;
 
@@ -45,9 +44,13 @@ mod tests {
         let template = parse_template(stream).expect("failed to parse template");
         assert_eq!(
             template,
-            Template {
-                entries: vec![TemplateEntry::Expression(" foo ".into())]
-            }
+            vec![Map {
+                indentation: 0,
+                items: vec![Entry::Expression(Expression {
+                    indentation: 0,
+                    expression: " foo ".into()
+                })]
+            }]
         )
     }
 }

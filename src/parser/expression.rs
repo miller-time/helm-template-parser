@@ -1,60 +1,92 @@
 use crate::{error::Error, stream::TokenStream, token::Token};
 
-pub fn parse_expression(input: &mut TokenStream) -> Result<String, Error> {
+#[derive(Debug, PartialEq)]
+pub struct Expression {
+    pub indentation: u32,
+    pub expression: String,
+}
+
+/// parse a standalone expression from the input stream
+/// preconditions:
+///   * aside from spaces, this line must start and end with '{{ }}'
+pub fn parse_expression(input: &mut TokenStream) -> Result<Expression, Error> {
+    // count indentation
+    let mut indentation: u32 = 0;
+    loop {
+        let token = input.peek().unwrap();
+        match token {
+            Token::Space => {
+                indentation += 1;
+                input.skip();
+            }
+            _ => {
+                break;
+            }
+        }
+    }
+
+    // chomp first '{'
+    if let Some(Token::LeftBrace) = input.peek() {
+        input.skip();
+    }
+    // chomp second '{'
+    if let Some(Token::LeftBrace) = input.peek() {
+        input.skip();
+    }
+
     let mut expression = String::new();
 
-    // skip over first '{'
-    input.skip();
-
-    // check for second '{'
-    if let Some(token) = input.peek() {
-        if let Token::LeftBrace = token {
-            // and skip over it
-            input.skip();
-        } else {
-            let message = format!("expected '{{{{' but got '{{{}'", token);
-            return Err(Error::ParserError(message));
+    // read expression
+    loop {
+        let token = input.peek().unwrap();
+        match token {
+            Token::RightBrace => {
+                break;
+            }
+            _ => {
+                let s: String = input.next().unwrap().to_string();
+                expression.push_str(&s);
+            }
         }
-    } else {
-        return Err(Error::ParserError(
-            "unexpected end of input after '{'".into(),
-        ));
+    }
+
+    // chomp first '}'
+    if let Some(Token::RightBrace) = input.peek() {
+        input.skip();
+    }
+    // chomp second '}'
+    if let Some(Token::RightBrace) = input.peek() {
+        input.skip();
     }
 
     loop {
-        match input.next() {
-            Some(token) => match token {
-                // first '}' indicates end of expression
-                Token::RightBrace => {
-                    // check for second '}'
-                    if let Some(token) = input.peek() {
-                        if let Token::RightBrace = token {
-                            // and skip over it
-                            input.skip();
-                            // check for following '\n'
-                            if let Some(Token::Newline) = input.peek() {
-                                // and skip over it
-                                input.skip();
-                            }
-                            return Ok(expression);
-                        } else {
-                            let message = format!("expected '}}}}' but got '}}{}'", token);
-                            return Err(Error::ParserError(message));
-                        }
-                    } else {
-                        return Err(Error::ParserError(
-                            "unexpected end of input after '}'".into(),
-                        ));
+        match input.peek() {
+            Some(token) => {
+                match token {
+                    // drop newline and return
+                    Token::Newline => {
+                        input.skip();
+                        break;
+                    }
+                    // drop trailing whitespace
+                    Token::Space => {
+                        input.skip();
+                    }
+                    _ => {
+                        let message = format!("unexpected symbol '{}' after '}}'", token);
+                        return Err(Error::ParserError(message));
                     }
                 }
-                t => {
-                    let s = t.to_string();
-                    expression.push_str(&s);
-                }
-            },
-            None => return Err(Error::ParserError("unterminated '{{'".into())),
+            }
+            None => {
+                break;
+            }
         }
     }
+    Ok(Expression {
+        indentation,
+        expression,
+    })
 }
 
 #[cfg(test)]
@@ -67,39 +99,25 @@ mod tests {
     fn parse_valid_expression() {
         let mut stream = tokenize("{{ foo }}").expect("failed to tokenize");
         let expression = parse_expression(&mut stream).expect("failed to parse expression");
-        assert_eq!(expression, " foo ");
-    }
-
-    #[test]
-    fn parse_invalid_expression_start() {
-        let mut stream = tokenize("{ foo }").expect("failed to tokenize");
-        let result = parse_expression(&mut stream);
-        assert!(result.is_err());
         assert_eq!(
-            result.err().unwrap(),
-            Error::ParserError("expected '{{' but got '{ '".into())
+            expression,
+            Expression {
+                indentation: 0,
+                expression: " foo ".into()
+            }
         );
     }
 
     #[test]
-    fn parse_unterminated_expression() {
-        let mut stream = tokenize("{{ foo").expect("failed to tokenize");
-        let result = parse_expression(&mut stream);
-        assert!(result.is_err());
+    fn parse_indented_expression() {
+        let mut stream = tokenize("  {{ foo }}").expect("failed to tokenize");
+        let expression = parse_expression(&mut stream).expect("failed to parse expression");
         assert_eq!(
-            result.err().unwrap(),
-            Error::ParserError("unterminated '{{'".into())
-        )
-    }
-
-    #[test]
-    fn parse_invalid_expression_end() {
-        let mut stream = tokenize("{{ foo }\n").expect("failed to tokenize");
-        let result = parse_expression(&mut stream);
-        assert!(result.is_err());
-        assert_eq!(
-            result.err().unwrap(),
-            Error::ParserError("expected '}}' but got '}\n'".into())
+            expression,
+            Expression {
+                indentation: 2,
+                expression: " foo ".into()
+            }
         );
     }
 }
